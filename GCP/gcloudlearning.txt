@@ -1,7 +1,9 @@
+<b>GCloud General Help</b>
 gcloud -h
 gcloud help config
 
 
+## GCloud Initial Setup
 gcloud auth list
 
 gcloud config set project [PROJECT_ID]
