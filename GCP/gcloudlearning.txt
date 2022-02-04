@@ -1,10 +1,18 @@
-<b>GCloud General Help</b>
+GCloud General Help
+===================
 gcloud -h
 gcloud help config
 
 
-## GCloud Initial Setup
+GCloud Initial Setup
+====================
 gcloud auth list
+
+gcloud config --help
+
+gcloud config list
+
+gcloud config list --all
 
 gcloud config set project [PROJECT_ID]
 
@@ -12,14 +20,8 @@ gcloud config set account `ACCOUNT`
 
 gcloud config list project
 
-Note : 
-
-Resources that live in a zone are referred to as zonal resources. Virtual machine instances and persistent disks live 
-in a zone. If you want to attach a persistent disk to a virtual machine instance, both resources must be in the same zone.
-Similarly, if you want to assign a static IP address to an instance, the instance must be in the same region as
-the static IP address.
-
 gcloud config get-value compute/zone
+
 gcloud config get-value compute/region
 
 gcloud compute project-info describe --project [PROJECT_ID]
@@ -29,15 +31,21 @@ Set Environment Variables
 export PROJECT_ID=<your_project_ID> and verify by echo $PROJECT_ID
 
 
+Note : 
+
+Resources that live in a zone are referred to as zonal resources. Virtual machine instances and persistent disks live 
+in a zone. If you want to attach a persistent disk to a virtual machine instance, both resources must be in the same zone.
+Similarly, if you want to assign a static IP address to an instance, the instance must be in the same region as
+the static IP address.
+
+
 
 Create a virtual machine with the gcloud tool
 
 gcloud compute instances create gcelab2 --machine-type n1-standard-2 --zone $ZONE
 gcloud compute instances create --help
 
-gcloud config --help
-gcloud config list
-gcloud config list --all
+
 
 Install Component
 sudo apt-get install google-cloud-sdk
@@ -46,9 +54,7 @@ List component
 gcloud components list
 gcloud compute instances describe <<vm>>
 
-Enable terminal by 
-
-gcloud beta interactive. 
+Enable terminal by  gcloud beta interactive. 
 
 Exit terminal by "exit".
 
