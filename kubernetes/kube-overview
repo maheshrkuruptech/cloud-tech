@@ -1,0 +1,530 @@
+Container orchestration platform. Kubernetes allows you to manage the life cycle of containerized apps in a cluster.
+
+Kubernetes cluster consists of at least one master and multiple compute nodes (also known as worker nodes).
+The master is responsible for exposing the application program interface (API), scheduling the deployments and managing the overall cluster.
+Each node runs a container runtime, such as Docker  along with an agent (kubelet)that communicates with the master.
+The node also runs additional components for logging, monitoring, service discovery and optional add-ons.
+Nodes(Physical machines) are the workhorses of a Kubernetes cluster. They expose compute, networking and storage resources to applications.
+
+- multiple nodes form a cluster.
+
+Each service instance is called PODS. So that means multiple pods in same node. Also multiple container in same node if needed helpers for the app to run.
+
+Within the same pod , container can communicate using localhost.
+
+A single pod or a replica set can be exposed to the internal or external consumers via services.
+Services enable the discovery of pods by associating a set of pods to a specific criterion.
+Pods are associated to services through key-value pairs called labels and selectors.
+Any new pod with labels that match the selector will automatically be discovered by the service. This architecture provides a flexible,
+loosely-coupled mechanism for service discovery.
+
+The definition of Kubernetes objects, such as pods, replica sets and services, are submitted to the master. Based on the defined requirements
+and availability of resources, the master schedules the pod on a specific node. The node pulls the images from the container image registry and
+coordinates with the local container runtime to launch the container.
+
+etcd is an open source, distributed key-value database from CoreOS, which acts as the single source of truth (SSOT) for all components of the
+Kubernetes cluster. The master queries etcd to retrieve various parameters of the state of the nodes, pods and containers.
+
+Main Concepts : - PODS , Service , ReplicaSet , Deployments (Kinds)
+ResourceQuota - is another Kind , ConfigMap is another kind , Secret is another kind.
+These are the Kubernetes Objects.
+
+
+ReplicaSet : HA Configuration for pods.
+
+Deployments: deployments , rolling updates , rollback , pause , resume.
+
+NameSpaces :
+
+Its like Mark Smith and Mark Williams. In same house , calls it by first name .
+Other person by lastname , outsider call my both f n last name.
+
+We do all in a namespace if not defined , by a name "default";
+
+Has many for networking , DNS and all those things. So to prevent accidental
+deletion of such resources , another resource or NS started at cluster startup .
+
+ "kube-system" . It also create "kube-public" . Resource made avail to all
+ users in kube-public.
+
+ In a huge cluster for eg : DEV and PROD in same cluster. but
+ isolate resource between them. like DB. etc. and each can assign its
+ own policies. Quota mechanism helps not to exceed allocation.
+
+ Resource within the same NS by using the service name.
+
+ Outsider use servicename.<NS>.svc(for service).cluster.local(default domain)
+
+Its accessible coz when a service is created a DNS entry created in this format.
+
+To set environment property :
+
+set env name value in containers section, (name value)
+
+Other ways are to use Config Maps and secret. (name ValueFrom)
+
+kubectl create configmap ; imperative
+
+kubectl create -f ; declarative
+
+<<config-name>> --from-literal=<key>=<value>
+
+can give multiple values by repearing the --from-literal .
+
+
+Instead we can use a config file. ;
+eg: kubectl create configmap app-config --from-file=xconfig.properties
+
+
+
+In declarative way , we dont have a specs section ; but its the data and can have key value pair
+
+
+get config maps
+
+either use kubectl get configmaps / kubectl describe configmaps
+
+For the PODs :
+Instead of passsing in env in the specs ->  container , it would be envFrom(its an array ) and then configMapRef -> name
+
+single env for referring config map is like env -name : valueFrom : confiMapRef -> name of config map  and key
+
+
+
+Secrets can be setup similar to config maps .
+
+two ways , declarative and imperative.
+
+kubectl create secret generic <<secret-name>> --from-literal
+
+other one is kubectl create -f
+
+--from-file is the other option jut like the config map.
+
+kind is goig to be Secret here.
+
+
+echo -n "stuff" | base64 --encode
+
+echo -n "stuff" | base64 --decode
+
+see the secret as yml kubectl get secret <<name>> -o yaml
+
+envRef , similarly in declarative way its secretRef
+
+and also within a volume of container tts stored with the secretName so volume -> name -> secret -> secretName
+
+
+ANother way to recreate the pod is
+
+kubectl get pod pod-name -o yaml > pod.yaml
+
+
+kubectl explain pods --recursive
+
+
+----------------------
+SECURITY CONTEXTS
+set the user access to container , pod using security context . it can be set at container level also.
+
+If security context is set at container level , then that will overwrite the pod settings.
+
+for pods , it can be set in the spec section. securityContext -> runAsUser.
+
+if we move this settings , it can be inside the container setting, just like envFrom.
+
+
+Capabilities are set at the container level , not at the pod level. its in the hierarchy of securityContext.
+
+securityContext -> capabilities -> add ["a" , "b"]
+To know its executed as which user ,
+kubectl exec <<pod-name>> -- whoami
+
+securityContext:
+    runAsUser: 1010
+---------------------------
+Service Accounts :
+
+Its for machines to use (Jenkins to deploy or prom to pull metrics ) vs User account is for users.
+
+
+kubectl create serviceaccount sa-name  . then can do a  get
+
+then it will get back a token . its stored as a secret
+
+secret name can be  fetched by kubectl describe servieaccount sa-name
+
+then use kubectl describe secret the <<secret-name>> . then its can be used as a bearer token ,
+
+
+after that the api can be accessed by host/api -insecure --header "Authorization:Bearer ****"
+
+usual process is to create a SA , assign permission using RBAC and export token to consume by 3rd party
+
+but when its hosted in k8 itself like prometheus , this process can be made simple by creating a volume inside the pod.
+
+so the token is already in pod and can be read by the application.
+
+for every name space , there is a default SA created.
+when ever pod is created , volume is automatically created and a secret is already created.
+
+and can be viewed by cat the mount location from the kubectl describe pod and then /  toekn
+
+but the basic token is very much restrictive in nature.
+
+if need to assign a new service account , in spec , -> serviceAccount  -> name
+
+if we want to restrict the automount , then spec -> automountServiceAccountToken false
+
+
+kubectl edit deployment
+
+
+Resource :
+
+Min CPU -> .5 and memory 256 G
+
+its in the specs -> containers ->  resources -> requests -> memory , cpu etc .
+
+resources -> limit for the limit .
+
+
+
+
+
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: mem-limit-range
+spec:
+  limits:
+  - default:
+      memory: 512Mi
+    defaultRequest:
+      memory: 256Mi
+    type: Container
+
+
+
+
+Taints and toleration.
+=====================
+POD to node relationship.
+Anology : - Bug approaching a person. Repellant is called Taint and tolerance is the process.
+One might not have tolerance to one Vs other one can easily go thru. and there is a tolerance level too.
+Taints is applied the Node (Person) ; and tolerance is on the pod (bug).
+Its not related to the security. ; but to set what pods can be scheduled on a NODE.
+
+So, how it works !! . If we have to use dedicated nodes for couple of applications , then we can apply this concept.
+
+First is to add a taint to the node . and then provide a tolerance to the pod which can be scheduled in the pod.
+
+
+kubectl taint nodes node-name key=value:taint-effect.
+
+Three effects: - NoSchedule , PreferNoSchedule | NoExecute.
+kubectl taint nodes node-name color=blue:NoSchedule.
+
+how its on the pod ?
+
+specs -> tolerations an array.
+then key , operator, value  ,  effect is color , Equal , blue ,  NoSchedule. all should be enclosed in double quotes.
+
+It doesnt tell to go to a node. but only say that accept pod with certain toleration.
+
+If NoExecute , then not qualified pods are evicted.
+
+We also have master nodes; why the pods are not scheduled in master ???
+
+Its coz taints are setup , so that pods are not schedueld :)
+
+can see the taint in kubectl describe ndoe kubemaster | grep Taint
+
+
+kubectl taint nodes node01 spray=mortein:NoSchedule
+
+
+kubectl taint nodes master/controlplane node-role.kubernetes.io/master:NoSchedule-
+
+
+Node Selectors :
+
+=> specs -> nodeSelectors -> size -> Large.
+
+Whats Large - these are labels assigned to node. labels and selectors are helpful here.
+
+kubectl label nodes node01 size=Large
+
+
+what if requirements are to setup if place in any medium or large, (or or NOT is not possible here)
+
+Node Affinity to help here :)
+
+It is to help a pod is hosted in  a POD.
+
+but this setup is complex.
+
+spec -> affinity -> nodeAffinity -> requiredDuringSchedulingIgnoredDuringExecution -> nodeSelectorTerms ->
+
+array of matchExpressions -> array of (key , operator(In , NotIn , Exists , etc) , values (values) is an array)
+
+What if there are no nodes matches the affinity setup . or if someone change the label ?
+
+thats the nodeAffinity thing . big value :)
+requiredDuringSchedulingIgnoredDuringExecution
+preferredDuringSchedulingIgnoredDuringExecution
+requiredDuringSchedulingrequiredDuringExecution
+
+
+ kubectl create deployment blue --image=nginx
+ kubectl scale deployment blue --replicas=6
+
+
+ - matchExpressions:
+              - key: node-role.kubernetes.io/master
+                operator: Exists
+
+
+
+multi container pods. => where many apps have same lifecycle , they are created together ; maintained and then destroyed together.
+and same volume share. need not create a volume mount for that.
+
+containers within the multi container pod can talk via localhost
+
+Design Patterns : - SideCar(logging agent along with the webapp and send to centralized system)
+Ambassador :  - Say , we want to have different DB ; ambassador is a proxy. so dbs can talk via localhost.
+Adapter COntainer: - eg: File beat; or pass thru and make it in the same format of the final system.
+
+
+kubectl get po -n elastic-stack :
+
+
+kubectl -n elastic-stack exec -it app cat /log/app.log
+
+
+
+
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: app
+  namespace: elastic-stack
+  labels:
+    name: app
+spec:
+  containers:
+  - name: app
+    image: kodekloud/event-simulator
+    volumeMounts:
+    - mountPath: /log
+      name: log-volume
+
+  - name: sidecar
+    image: kodekloud/filebeat-configured
+    volumeMounts:
+    - mountPath: /var/log/event-simulator/
+      name: log-volume
+
+  volumes:
+  - name: log-volume
+    hostPath:
+      # directory location on host
+      path: /var/log/webapp
+      # this field is optional
+      type: DirectoryOrCreatecontrolplane
+
+
+
+POD - Status (Pending -> Scheduling -> Running -> ContainerCreating )
+    - Conditions. true / false
+
+    ContainerReady -> when ready to accept request.
+    eg: Jenkins , it takes 15 sec. after 15 sec , there is a warm up . it continue to indicate its ready.
+
+    how to actually kube know how its really ready. !! - how to tie in that.
+
+    Different ways to indicate its actually ready. Probe !! it can be http , tcp 3306 or custom script.
+
+    how to configure. containers -> container -> readinessProbe
+    httpGet with path and port ; tcpSocket with port ; or script using exec -> command -> array of instructions.
+
+    additional configs are initialDelaySeconds(min sec to warmup) ; periodSeconds (frequency) ; failureThreshold (attempts before mark as failed).
+
+    same concept : livenessProbe
+
+    readinessProbe:
+           httpGet:
+             path: /
+             port: 3000
+           timeoutSeconds: 2
+
+
+
+Logging :
+
+kubectl log -f <<pod-name>> -c container-name
+
+
+
+Monitoring : Metrics Server . One per cluster
+
+COllect from nodes and pods , do aggregate and store in memory.
+
+So no historical data. so either prom :
+
+How generated .
+
+Kube runs an agent to each node : Kubelet.
+
+Recieve instrn : from API master and run pods in nodes.
+
+it lso contains a component cAdvisor.
+
+responsible to get perf metrics from pods and make it
+available via kubelet.
+
+if usoing minikube , minikube addons enable metrics-server.
+
+for all other env:
+
+deploy by cloning from github and
+
+kubectl create -f deploy/1.8+/
+
+this will deploy few pods and services and roles
+to poll for metrics from nodes in the clister.
+
+once processed , it can be viewed by commadn.
+
+kubectl top node.
+
+kubectl top pods.
+
+
+Labels, Selectors , Annotations. :
+
+Labels and Selectors are std thing to classify / filter / select basesd on a condition/criteria.
+
+
+Labels are props attached to each type / object  :
+replicaset , deployment , etc .
+
+In pod definition  : -> metadata -> labels as key value pair
+Selectors help to filter the items.
+
+
+then use kubectl get pods --selector app=App1
+
+if multiple selector , then use key:value,key:value
+
+It also used extensively in internals of kube.
+
+eg: ReplicaSet , then tie that to the actial app .
+
+in that case , replicaset itself will have a label if incase we want a quick filtering.
+
+then there is the template section in specs. metadata-> labels. is the actual pod label.
+and then selector: matchLabels -> key value.
+
+Same case with services. too
+Labels of replicaset is then used if we cant to discover that with solemtihgn else.
+
+
+Annotations : while later are useful ,
+
+eg: name and version and build information
+
+if any other way to manage the metadata.
+
+
+Rolling Updates :
+================
+kubectl rollout status deployment/deploy-name
+kubectl rollout history
+kubectl rollout status deployment nginx
+
+kubectl rollout history deployment nginx --revision=4
+
+To record chagnes :
+
+kubectl edit deployments. nginx --record
+
+OR create deployment --record
+
+two types of strategy :
+say 5 instance to newer is to destroy and create
+or do a rolling upgrade.
+
+
+either done by kubectl apply -f or
+
+kubectl set image deployment imagename=imagevalue
+
+
+First it creates a replica set - > bring up the pod.
+
+It can be seen by kubectl get replicaets.
+
+
+roll back by
+
+kubectl undo rollout deployment/deployment-name
+
+
+ANOTHER way to create a deployment specifying only the image :
+
+kubectl run deployment-name --image=nginx
+
+
+Jobs
+====
+Work loads :
+Analytics , Reporting , Batch : Carry out and finish
+DB, Web Server stays long:
+
+just like docker.
+
+docker run ubuntu expr 3+2.
+
+docker ps -a
+
+in k8The  specs -> command : ['expr' , '3' , '+' , '2']
+
+then the restart continues until it reach a threshold to keep it running for ever.
+
+This is by the restart policy. ALways. change it to Never/ OnFailure.
+
+how bathc ? parallel processing. success and then exit.
+
+So need a manager , get done and exit. Can replicset , no: coz it only keep a
+defined pods running.
+
+kind : Job
+apiVersion either batch/v1 or v1
+template -> put the pod definition and use
+
+kubectl get jobs
+
+restart policy never. :
+
+How about the output. then kubectl delete job <<>>
+
+
+spec-> completions : number of nodes for the completion.
+       parallelism: number of parallel.
+
+
+CronJob : -> batch/v1beta1 as apiVersion
+
+kind: CronJob
+
+spec - > schedule -. Cron expression.
+spec -> jobTemplate and entire job goes there.
+
+kubectl get cronjob
+
+To get all objects.
+
+kubectl get all --selector env=prod
+

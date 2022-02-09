@@ -1,0 +1,177 @@
+kubectl cluster-info
+kubectl get nodes
+kubectl describe node
+kubectl get pods
+kubectl describe pod <podname>
+kubectl delete deployment <deployment-name>
+kubectl delete pod webapp
+
+
+Create a deployment file :
+=========================
+kubectl run redis --image=redis123 --dry-run=client -o yaml > pod.yml
+
+kubectl run redis --image=redis --dry-run=client -o yaml > pod-demo.yml
+
+kubectl run redis --image=redis:alpine -l tier=db
+kubectl run custom-nginx --image=nginx --port=8080
+
+kubectl expose pod redis --port=6379 --name redis-service
+
+kubectl run httpd --image=httpd:alpine --port=80 --expose
+
+
+Edit and apply a deployment :
+===========================
+kubectl create deployment webapp --image=kodekloud/webapp-color
+kubectl create deployment redis-deploy --image redis --namespace=dev-ns --dry-run=client -o yaml > deploy.yaml
+kubectl scale deployment/webapp --replicas=3
+kubectl scale deployment/redis-deploy --replicas=2 --namespace=dev-ns
+
+kubectl apply -f pod.yaml
+
+
+Edit a pod runtime
+==================
+kubectl edit pod redis
+
+
+
+
+Create an run a replcaset by
+=======================
+
+kubectl create -f filename
+
+
+kubectl get replicaset
+
+kubectl delete replicaset my-replicaset
+
+
+Update a replica set
+kubectl edit replicaset new-replica-set
+kubectl replace -f  filename
+kubectl scale replica=6 -f filename
+kubectl scale replica=6 <type> , replicaset  + <metaname>
+
+Deployments :
+============
+kubectl create deployment redis-deploy --image redis --namespace=dev-ns --dry-run=client -o yaml > deploy.yaml
+
+kubectl get deployments
+kubectl get all
+
+execute withour creating actual resource ,
+kubectl  --dry-run
+only to validate the command , kubectl --dry-run=client
+
+Formatting output
+
+-o yaml
+-o name - if only need the resource name
+-o wide additional information
+
+Namespaces :
+============
+
+kubectl get namespace
+kubectl create ns dev-ns
+kubectl get pods --namespace=
+
+kubectl config set-context $(kubectl config current-context) --namespace=neededns
+
+
+
+
+Verify if context is right
+===========================
+kubectl config get-contexts
+kubectl config use-context <<needed namespace>>
+
+kubectl config set-context --current --namespace="namespace"
+
+
+
+--Remove any evicted pods
+kubectl get po --all-namespaces --field-selector 'status.phase!=Running' -o json | kubectl delete -f -
+
+
+
+Initialize helm and tiller permissions
+=====================================
+kubectl delete --namespace kube-system svc tiller-deploy
+kubectl delete --namespace kube-system deploy tiller-deploy
+kubectl create serviceaccount --namespace kube-system tiller
+kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
+kubectl patch deploy --namespace kube-system tiller-deploy -p '{"spec":{"template":{"spec":{"serviceAccount":"tiller"}}}}'
+helm init --service-account tiller --upgrade
+
+
+kubectl get deployments
+
+
+Config maps
+=========
+Impretive way : kubectl create configmap
+
+Declarative kubectl create -f
+
+
+Secret
+Impretive way : kubectl create secrets
+
+Declarative kubectl create -f
+
+
+
+
+curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get-helm-3 > get_helm.sh
+chmod 700 get_helm.sh
+./get_helm.sh
+
+helm repo add bitnami https://charts.bitnami.com/bitnami
+
+eg:
+
+helm install bitnami/mongodb --version 7.14.3 --generate-name
+NAME: mongodb-1590871722
+LAST DEPLOYED: Sat May 30 16:48:44 2020
+NAMESPACE: default
+STATUS: deployed
+REVISION: 1
+TEST SUITE: None
+
+MongoDB can be accessed via port 27017 on the following DNS name from within your cluster:
+    mongodb-1590871722.default.svc.cluster.local
+
+To get the root password run:
+    export MONGODB_ROOT_PASSWORD=$(kubectl get secret --namespace default mongodb-1590871722 -o jsonpath="{.data.mongodb-root-password}" | base64 --decode)
+
+To connect to your database run the following command:
+    kubectl run --namespace default mongodb-1590871722-client --rm --tty -i --restart='Never' --image docker.io/bitnami/mongodb:4.2.7-debian-10-r9 --command -- mongo admin --host mongodb-1590871722 --authenticationDatabase admin -u root -p $MONGODB_ROOT_PASSWORD
+
+To connect to your database from outside the cluster execute the following commands:
+    kubectl port-forward --namespace default svc/mongodb-1590871722 27017:27017 &
+    mongo --host 127.0.0.1 --authenticationDatabase admin -p $MONGODB_ROOT_PASSWORD
+
+helm create mychart
+helm install --dry-run --debug ./mychart
+
+helm install cp-helm-charts --name dsg-<<cluster>>  - how to get from Git ???? , but it reads value.yml and proceed.
+kubectl apply -f cp-helm-charts/loadbalancers/<<cluster>>/load-balancer-kafka.yaml
+kubectl apply -f cp-helm-charts/loadbalancers/<<cluster>>/load-balancer-zk.yaml
+kubectl apply -f cp-helm-charts/loadbalancers/<<cluster>>/load-balancer-connect.yaml
+kubectl apply -f cp-helm-charts/loadbalancers/<<cluster>>/load-balancer-ksql.yaml
+kubectl apply -f cp-helm-charts/loadbalancers/<<cluster>>/load-balancer-schema.yaml
+
+helm install --name prometheus-<<cluster>>-customer-order stable/prometheus
+
+
+helm install --name grafana-identifier stable/grafana
+//get password
+kubectl get secret --namespace default grafana-<<cluster>> -o jsonpath="{.data.admin-password}" | base64 --decode ; echo
+
+kubectl apply -f cp-helm-charts/loadbalancers/<<cluster>>/loadBalancer-prometheus.yaml
+kubectl apply -f cp-helm-charts/loadbalancers/<<cluster>>/loadBalancer-grafana.yaml
+

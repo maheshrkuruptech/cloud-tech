@@ -1,0 +1,58 @@
+Kubernetes Servies enable communication between apps and users internally and externally.
+
+Say a group for DB , frontend and then backend.
+
+Front end make sure its avail to end users. and all communication between.
+
+Kube node has IP address 192.168.xxx.xxx  and i am at 10.xx  . So arent the same network.
+
+
+Service is another kubernetes object . listen to port on a node  and  fwd request on port to the port of  a pod running the web application.
+This type of service is called NodePort.
+Target port is the port of the pod. Port is the actual port of the service , since everything is named from the service perspective.
+  Service is a virual server inside the node.
+  Inside cluster it has itswwn Ip address , which is the cluster IP.
+
+  There is a port on the node itself for access externally. its called Node port. Node ports can only beween a valid range and between 30000 and 32767,
+
+
+Other is cluster IP . Service create a virual ip inside the clustetr to enable communication between different services.
+Third is an LB, provision the load balancer for distribting load.
+
+
+How to create a service. its like any other kubernetes object. High level structure remains same , apiversion, kind metadata and specs section.
+
+
+specs -> type it could be any of the three.
+
+For NodePort , its the ports. a list.
+ports:
+  - targetPort: <<default is same as port>>
+    port: <mandatory>
+    nodePort: <<default in the range of 30000>>
+selector:
+
+There is nothing connects the service to pod :) . Its via labels and selectors.
+
+
+kubectl get services.
+
+
+what if you have multiple pods. like the HA service . they all have the same labels. So its fine. Even across the nodes.
+
+Algorithm is a random by the load balancere.
+
+
+Cluster IP : since its pods can come and go and IP changes. what if one front end service need to talk to a which one ??
+
+all this are done by Cluster IP ; like it groups all the backend instance and then front end talks to that IP. so that even if the node address changes ,
+its still talks well.
+
+
+so each layer can scale or move without disrupting.
+
+again uses a service definition file and then specs type is ClusterIP; still targetport and a port.
+
+then again selectors to rescue . serviecs can access via the service name or the cluster IP.
+  
+

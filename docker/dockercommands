@@ -1,0 +1,109 @@
+1.List container
+2.Search and Pull
+3.Remove
+4.Rename
+
+
+List images
+============
+docker images.
+
+List containers :
+=================
+docker ps : List all active  containers
+docker ps -a : List all active and ended container
+docker container ls
+
+
+Search and Pull containers :
+===========================
+docker search rabbitmq : Search for all rabbit mq
+docker pull rabbitmq:latest : Pull using a tag.
+
+Stop and Remove:
+================
+docker stop <containerid>
+docker rm <containerid>
+docker rmi <imageid>
+Remove all exited container : docker rm $(docker ps -a -f status=exited -q)
+Remove all containers : docker rmi $(docker images -q)
+
+Inspect it by
+=============
+docker inspect
+
+
+Logs :
+=====
+docker logs container
+
+Run
+===
+1. Run
+(--name to name container
+ --rm when exited
+ -e for environment variable
+ -v for volume a:b will map content of A , physical disk to B : container location.
+ tag for tags
+
+ -i is interactive mode
+ -t for terminal
+ -p for port . two ports by p1:p2 likes 8080:8081
+ )
+docker run -d -p 15672:15672 -p 5672:5672 -p 5671:5671 --hostname my-rabbitmq --name my-rabbitmq-container rabbitmq:3-management
+docker run --rm   --name pg-docker -e POSTGRES_PASSWORD=docker -d -p 5432:5432 -v $HOME/docker/volumes/postgres:/var/lib/postgresql/data  postgres
+docker run --rm --name cassandra -d   -p 9042:7000  -v $HOME/docker/volumes/cassandra:/var/lib/cassandra/data
+docker run  -it <container name> /bin/bash to
+
+Get host address by
+
+docker-machine env | grep HOST
+
+Start : Start an existing container
+Run  : check for container , install and spin it up.   docker run -it --name my-linux-container-1 ubuntu bash
+Run creates multiple containers for the same instance.
+Exec : execute something in an existing container. ; like -d for detached mode : run in background ;
+Compose :
+UP :
+
+
+
+build
+=====
+Create a dockerfile ; then execute by
+docker build Dockerfile -t  <<tagname>>
+docker push account/tagname
+
+
+FROM <<base image>>
+
+RUN
+RUN
+COPY
+
+ENTRYPOINT : like a command instruction . specify program to run
+then whatever types after that gets appended.
+Thats the difference between cmd.
+If CMD , it gets replaced , vs with entry point it
+gets appended.
+
+CMD: without doing an entry point , it will execute the
+command . Its a json fmt and ["action" , "input"]
+
+CMD can be the default. both should be in json format
+
+ENTRYPOINT[]
+CMD[]
+
+docker history image_name
+
+Each step is cached , so that we need not re-run. Only failed will execute and re-use the existing layer.
+
+DOCKER NETWORKING
+
+- BRIDGE : default . private internal network on the host.
+  All containers get an IP and can be accessed each outher if required.
+  if outside is by map port by host and port.
+
+- NONE
+- HOST
